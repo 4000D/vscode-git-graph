@@ -148,6 +148,7 @@ This extension consumes the following settings:
 This extension contributes the following commands:
 
 * `git-graph.view`: Git Graph: View Git Graph
+* `git-graph.viewCommit`: Git Graph: View Commit _(programmatic command; expects `{ rootUri: vscode.Uri, commitHash: string }`)_
 * `git-graph.addGitRepository`: Git Graph: Add Git Repository... _(used to add sub-repos to Git Graph)_
 * `git-graph.clearAvatarCache`: Git Graph: Clear Avatar Cache
 * `git-graph.endAllWorkspaceCodeReviews`: Git Graph: End All Code Reviews in Workspace

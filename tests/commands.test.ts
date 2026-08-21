@@ -73,7 +73,7 @@ describe('CommandManager', () => {
 
 	it('Should construct a CommandManager, and be disposed', () => {
 		// Assert
-		expect(commandManager['disposables']).toHaveLength(11);
+		expect(commandManager['disposables']).toHaveLength(12);
 		expect(commandManager['gitExecutable']).toStrictEqual({
 			path: '/path/to/git',
 			version: '2.25.0'
@@ -233,6 +233,96 @@ describe('CommandManager', () => {
 			await waitForExpect(() => {
 				expect(spyOnLog).toHaveBeenCalledWith('Command Invoked: git-graph.view');
 				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, { repo: '/path/to/workspace-folder' });
+			});
+		});
+	});
+
+	describe('git-graph.viewCommit', () => {
+		const commitHash = '1a2b3c4d5e6f1a2b3c4d5e6f1a2b3c4d5e6f1a2b';
+
+		it('Should open the Git Graph View to a commit in a known repository', async () => {
+			// Setup
+			spyOnGetKnownRepo.mockResolvedValueOnce('/path/to/workspace-folder/repo');
+
+			// Run
+			vscode.commands.executeCommand('git-graph.viewCommit', {
+				rootUri: vscode.Uri.file('/path/to/workspace-folder/repo'),
+				commitHash: commitHash
+			});
+
+			// Assert
+			await waitForExpect(() => {
+				expect(spyOnLog).toHaveBeenCalledWith('Command Invoked: git-graph.viewCommit');
+				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, {
+					repo: '/path/to/workspace-folder/repo',
+					commitDetails: {
+						commitHash: commitHash,
+						compareWithHash: null
+					}
+				});
+			});
+		});
+
+		it('Should open the Git Graph View to a commit in a newly registered repository', async () => {
+			// Setup
+			spyOnGetKnownRepo.mockResolvedValueOnce(null);
+			spyOnRegisterRepo.mockResolvedValueOnce({ root: '/path/to/workspace-folder/repo', error: null });
+
+			// Run
+			vscode.commands.executeCommand('git-graph.viewCommit', {
+				rootUri: vscode.Uri.file('/path/to/workspace-folder/repo'),
+				commitHash: commitHash
+			});
+
+			// Assert
+			await waitForExpect(() => {
+				expect(spyOnRegisterRepo).toHaveBeenCalledWith('/path/to/workspace-folder/repo', true);
+				expect(spyOnGitGraphViewCreateOrShow).toHaveBeenCalledWith('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, {
+					repo: '/path/to/workspace-folder/repo',
+					commitDetails: {
+						commitHash: commitHash,
+						compareWithHash: null
+					}
+				});
+			});
+		});
+
+		it.each([
+			undefined,
+			{},
+			{ rootUri: '/path/to/workspace-folder/repo', commitHash: commitHash },
+			{ rootUri: vscode.Uri.file('/path/to/workspace-folder/repo') },
+			{ rootUri: vscode.Uri.file('/path/to/workspace-folder/repo'), commitHash: 'invalid' }
+		])('Should display an error when required arguments are invalid', async (arg) => {
+			// Setup
+			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
+
+			// Run
+			vscode.commands.executeCommand('git-graph.viewCommit', arg);
+
+			// Assert
+			await waitForExpect(() => {
+				expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('Unable to Open Commit in Git Graph: The command was not called with a valid rootUri and full commitHash.');
+				expect(spyOnGitGraphViewCreateOrShow).not.toHaveBeenCalled();
+			});
+		});
+
+		it('Should display the registration error when the repository could not be registered', async () => {
+			// Setup
+			spyOnGetKnownRepo.mockResolvedValueOnce(null);
+			spyOnRegisterRepo.mockResolvedValueOnce({ root: null, error: 'The folder is not a Git repository.' });
+			vscode.window.showErrorMessage.mockResolvedValueOnce(null);
+
+			// Run
+			vscode.commands.executeCommand('git-graph.viewCommit', {
+				rootUri: vscode.Uri.file('/path/to/workspace-folder/repo'),
+				commitHash: commitHash
+			});
+
+			// Assert
+			await waitForExpect(() => {
+				expect(vscode.window.showErrorMessage).toHaveBeenCalledWith('The folder is not a Git repository. Therefore the commit could not be opened in Git Graph.');
+				expect(spyOnGitGraphViewCreateOrShow).not.toHaveBeenCalled();
 			});
 		});
 	});

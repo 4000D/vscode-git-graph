@@ -427,7 +427,7 @@ class GitGraphView {
 						this.loadCommitDetails(commitElem);
 					}
 				} else {
-					showErrorMessage('Unable to resume Code Review, it could not be found in the latest ' + this.maxCommits + ' commits that were loaded in this repository.');
+					showErrorMessage('Unable to open Commit Details, the commit could not be found in the latest ' + this.maxCommits + ' commits that were loaded in this repository.');
 				}
 			} else if (this.loadViewTo.runCommandOnLoad) {
 				switch (this.loadViewTo.runCommandOnLoad) {

@@ -47,6 +47,7 @@ export class CommandManager extends Disposable {
 
 		// Register Extension Commands
 		this.registerCommand('git-graph.view', (arg) => this.view(arg));
+		this.registerCommand('git-graph.viewCommit', (arg) => this.viewCommit(arg));
 		this.registerCommand('git-graph.addGitRepository', () => this.addGitRepository());
 		this.registerCommand('git-graph.removeGitRepository', () => this.removeGitRepository());
 		this.registerCommand('git-graph.clearAvatarCache', () => this.clearAvatarCache());
@@ -121,6 +122,36 @@ export class CommandManager extends Disposable {
 		}
 
 		GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, loadRepo !== null ? { repo: loadRepo } : null);
+	}
+
+	/**
+	 * Open the Git Graph View to a specific commit.
+	 * @param arg The repository URI and full commit hash to open.
+	 */
+	private async viewCommit(arg: any) {
+		if (typeof arg !== 'object' || !(arg.rootUri instanceof vscode.Uri) || typeof arg.commitHash !== 'string' || !/^[0-9a-f]{40,64}$/i.test(arg.commitHash)) {
+			showErrorMessage('Unable to Open Commit in Git Graph: The command was not called with a valid rootUri and full commitHash.');
+			return;
+		}
+
+		const repoPath = getPathFromUri(arg.rootUri);
+		let loadRepo = await this.repoManager.getKnownRepo(repoPath);
+		if (loadRepo === null) {
+			const registration = await this.repoManager.registerRepo(await resolveToSymbolicPath(repoPath), true);
+			if (registration.root === null) {
+				showErrorMessage(registration.error! + ' Therefore the commit could not be opened in Git Graph.');
+				return;
+			}
+			loadRepo = registration.root;
+		}
+
+		GitGraphView.createOrShow(this.context.extensionPath, this.dataSource, this.extensionState, this.avatarManager, this.repoManager, this.logger, {
+			repo: loadRepo,
+			commitDetails: {
+				commitHash: arg.commitHash,
+				compareWithHash: null
+			}
+		});
 	}
 
 	/**

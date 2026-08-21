@@ -52,6 +52,11 @@
 			},
 			{
 				"category": "Git Graph",
+				"command": "git-graph.viewCommit",
+				"title": "View Commit"
+			},
+			{
+				"category": "Git Graph",
 				"command": "git-graph.addGitRepository",
 				"title": "Add Git Repository..."
 			},
@@ -1485,6 +1490,10 @@
 		},
 		"menus": {
 			"commandPalette": [
+				{
+					"command": "git-graph.viewCommit",
+					"when": "false"
+				},
 				{
 					"command": "git-graph.openFile",
 					"when": "isInDiffEditor && resourceScheme == git-graph && git-graph:codiconsSupported"
