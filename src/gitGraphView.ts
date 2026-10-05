@@ -172,6 +172,16 @@ export class GitGraphView extends Disposable {
 		let errorInfos: ErrorInfo[];
 
 		switch (msg.command) {
+			case 'customCommitAction':
+				try {
+					if (!['details', 'changes', 'compare'].includes(msg.action)) throw new Error('Invalid commit action.');
+					await vscode.commands.executeCommand('4000d-custom.commitAction', {
+						repositoryPath: msg.repo, commitHash: msg.commitHash, action: msg.action
+					});
+				} catch (error) {
+					showErrorMessage('Unable to open commit action: ' + String(error));
+				}
+				break;
 			case 'addRemote':
 				this.sendMessage({
 					command: 'addRemote',
@@ -664,6 +674,7 @@ export class GitGraphView extends Disposable {
 	private getHtmlForWebview() {
 		const config = getConfig(), nonce = getNonce();
 		const initialState: GitGraphViewInitialState = {
+			customCommitActionsAvailable: vscode.extensions.getExtension('4000d.4000d-custom') !== undefined,
 			config: {
 				commitDetailsView: config.commitDetailsView,
 				commitOrdering: config.commitOrder,

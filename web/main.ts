@@ -1101,6 +1101,20 @@ class GitGraphView {
 		const commit = this.commits[this.commitLookup[hash]];
 		return [[
 			{
+				title: 'Show Commit Details in Sidebar',
+				visible: initialState.customCommitActionsAvailable,
+				onClick: () => sendMessage({ command: 'customCommitAction', repo: this.currentRepo, commitHash: hash, action: 'details' })
+			}, {
+				title: 'Open Commit Changes in Multi-File Diff',
+				visible: initialState.customCommitActionsAvailable,
+				onClick: () => sendMessage({ command: 'customCommitAction', repo: this.currentRepo, commitHash: hash, action: 'changes' })
+			}, {
+				title: 'Compare With' + ELLIPSIS,
+				visible: initialState.customCommitActionsAvailable,
+				onClick: () => sendMessage({ command: 'customCommitAction', repo: this.currentRepo, commitHash: hash, action: 'compare' })
+			}
+		], [
+			{
 				title: 'Add Tag' + ELLIPSIS,
 				visible: visibility.addTag,
 				onClick: () => this.addTagAction(hash, '', this.config.dialogDefaults.addTag.type, '', null, target)

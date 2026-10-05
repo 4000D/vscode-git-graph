@@ -223,6 +223,7 @@ export interface GitRepoState {
 /* Git Graph View Types */
 
 export interface GitGraphViewInitialState {
+	readonly customCommitActionsAvailable: boolean;
 	readonly config: GitGraphViewConfig;
 	readonly lastActiveRepo: string | null;
 	readonly loadViewTo: LoadGitGraphViewTo;
@@ -1247,8 +1248,16 @@ export interface ResponseViewScm extends ResponseWithErrorInfo {
 	readonly command: 'viewScm';
 }
 
+export interface RequestCustomCommitAction {
+	readonly command: 'customCommitAction';
+	readonly repo: string;
+	readonly commitHash: string;
+	readonly action: 'details' | 'changes' | 'compare';
+}
+
 export type RequestMessage =
-	RequestAddRemote
+	RequestCustomCommitAction
+	| RequestAddRemote
 	| RequestAddTag
 	| RequestApplyStash
 	| RequestBranchFromStash

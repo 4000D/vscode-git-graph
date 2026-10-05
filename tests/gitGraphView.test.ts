@@ -488,6 +488,29 @@ describe('GitGraphView', () => {
 			expect(spyOnRepoFileWatcherUnmute).toHaveBeenCalledWith();
 		});
 
+		describe('customCommitAction', () => {
+			it.each(['details', 'changes', 'compare'] as const)('Should forward %s with the selected repo and commit', async (action) => {
+				const spy = jest.spyOn(vscode.commands, 'executeCommand').mockResolvedValueOnce(undefined);
+				onDidReceiveMessage({ command: 'customCommitAction', repo: '/path/to/repo', commitHash: 'abcdef123456', action });
+				await waitForExpect(() => {
+					expect(spy).toHaveBeenCalledWith('4000d-custom.commitAction', {
+						repositoryPath: '/path/to/repo', commitHash: 'abcdef123456', action
+					});
+					expect(spyOnRepoFileWatcherUnmute).toHaveBeenCalled();
+				});
+			});
+
+			it('Should report missing integration and unmute the watcher', async () => {
+				jest.spyOn(vscode.commands, 'executeCommand').mockRejectedValueOnce(new Error('command unavailable'));
+				const spy = jest.spyOn(utils, 'showErrorMessage').mockResolvedValueOnce(undefined);
+				onDidReceiveMessage({ command: 'customCommitAction', repo: '/path/to/repo', commitHash: 'abcdef123456', action: 'details' });
+				await waitForExpect(() => {
+					expect(spy).toHaveBeenCalledWith(expect.stringContaining('command unavailable'));
+					expect(spyOnRepoFileWatcherUnmute).toHaveBeenCalled();
+				});
+			});
+		});
+
 		describe('addRemote', () => {
 			it('Should add a remote', async () => {
 				// Setup
@@ -3628,6 +3651,12 @@ describe('GitGraphView', () => {
 			expect(mockedWebviewPanel.panel.webview.html).toContain('<link rel="stylesheet" type="text/css" href="vscode-webview-resource://file///path/to/extension/media/out.min.css">');
 			expect(mockedWebviewPanel.panel.webview.html).toContain('<title>Git Graph</title>');
 			expect(mockedWebviewPanel.panel.webview.html).toContain('<style>body{--git-graph-color0:#0085d9; --git-graph-color1:#d9008f; --git-graph-color2:#00d90a; --git-graph-color3:#d98500; --git-graph-color4:#a300d9; --git-graph-color5:#ff0000; --git-graph-color6:#00d9cc; --git-graph-color7:#e138e8; --git-graph-color8:#85d900; --git-graph-color9:#dc5b23; --git-graph-color10:#6f24d6; --git-graph-color11:#ffcc00; } [data-color=\"0\"]{--git-graph-color:var(--git-graph-color0);} [data-color=\"1\"]{--git-graph-color:var(--git-graph-color1);} [data-color=\"2\"]{--git-graph-color:var(--git-graph-color2);} [data-color=\"3\"]{--git-graph-color:var(--git-graph-color3);} [data-color=\"4\"]{--git-graph-color:var(--git-graph-color4);} [data-color=\"5\"]{--git-graph-color:var(--git-graph-color5);} [data-color=\"6\"]{--git-graph-color:var(--git-graph-color6);} [data-color=\"7\"]{--git-graph-color:var(--git-graph-color7);} [data-color=\"8\"]{--git-graph-color:var(--git-graph-color8);} [data-color=\"9\"]{--git-graph-color:var(--git-graph-color9);} [data-color=\"10\"]{--git-graph-color:var(--git-graph-color10);} [data-color=\"11\"]{--git-graph-color:var(--git-graph-color11);} </style>');
+		});
+
+		it.each([false, true])('Should expose integration availability: %s', (installed) => {
+			(vscode.extensions.getExtension as jest.Mock).mockReturnValueOnce(installed ? { id: '4000d.4000d-custom' } : undefined);
+			GitGraphView.createOrShow('/path/to/extension', dataSource, extensionState, avatarManager, repoManager, logger, null);
+			expect(vscode.getMockedWebviewPanel(0).panel.webview.html).toContain('"customCommitActionsAvailable":' + installed);
 		});
 
 		it('Should get HTML when no Git executable is known', () => {
